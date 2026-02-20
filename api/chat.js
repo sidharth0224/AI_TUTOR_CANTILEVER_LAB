@@ -10,7 +10,7 @@ import knowledgeBase from "../server/knowledgeBase.js";
 async function runSupervisor(query) {
     const model = new ChatGroq({
         apiKey: process.env.GROQ_API_KEY,
-        model: "llama-3.3-70b-versatile",
+        model: "llama-3.1-8b-instant",
         temperature: 0,
         maxTokens: 200,
     });
@@ -100,17 +100,18 @@ REQUIREMENTS:
     return response.content.trim();
 }
 
-// ─── Media Engine Agent (Improved) ───
+// ─── Media Engine Agent (Optimized — parallel LLM calls) ───
 async function runMediaEngine(topic, markdown, duration) {
     const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
     let imageUrl = null;
     let audioText = null;
     let mediaFailed = false;
 
-    // Generate structured metadata for rich SVG
-    try {
-        const completion = await groq.chat.completions.create({
-            model: "llama-3.3-70b-versatile",
+    // Run SVG metadata and TTS script generation in PARALLEL to save time
+    const [imageResult, audioResult] = await Promise.allSettled([
+        // Task 1: Generate SVG metadata
+        groq.chat.completions.create({
+            model: "llama-3.1-8b-instant",
             messages: [{
                 role: "user",
                 content: `Generate metadata for an infographic about EXACTLY this topic: "${topic}".
@@ -118,8 +119,7 @@ async function runMediaEngine(topic, markdown, duration) {
 CRITICAL RULES:
 - The title MUST be about "${topic}" specifically, NOT a generic parent category.
 - keyConcepts must be 4 sub-concepts WITHIN "${topic}", not sibling topics.
-- codeSnippet MUST demonstrate "${topic}" specifically (e.g., if topic is "Arrays", show array code, NOT linked list code).
-- For example: if topic is "Arrays", title should be "Arrays" not "Data Structures". If topic is "Binary Search Trees", title should be "Binary Search Trees" not "Trees".
+- codeSnippet MUST demonstrate "${topic}" specifically.
 
 Return ONLY a raw JSON object (no markdown):
 {
@@ -127,51 +127,48 @@ Return ONLY a raw JSON object (no markdown):
   "subtitle": "One-line description of ${topic} (max 15 words)",
   "keyConcepts": ["sub-concept of ${topic}", "sub-concept of ${topic}", "sub-concept of ${topic}", "sub-concept of ${topic}"],
   "category": "one of: dsa, web, system-design, database, os, networking, oop, ml, general",
-  "codeSnippet": "A 5-8 line code example demonstrating ${topic} specifically. MUST use literal backslash-n (\\n) to separate lines. Each line under 50 chars. Example for Arrays: 'let arr = [10, 20, 30];\\narr.push(40);\\nconsole.log(arr[0]);\\n// Output: 10\\narr.pop();\\nconsole.log(arr.length);\\n// Output: 3'. Never put everything on one line.",
+  "codeSnippet": "A 5-8 line code example demonstrating ${topic}. Use literal backslash-n (\\n) to separate lines. Each line under 50 chars.",
   "interviewTip": "One interview tip specifically about ${topic} (max 20 words)"
 }`
             }],
             max_tokens: 500,
             temperature: 0.3,
-        });
-
-        let imageMetadata;
-        try {
-            const raw = completion.choices[0]?.message?.content?.trim() || "{}";
-            const jsonMatch = raw.match(/\{[\s\S]*\}/);
-            imageMetadata = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
-        } catch {
-            imageMetadata = {
-                title: topic,
-                subtitle: "CSE Placement Preparation",
-                keyConcepts: ["Concept 1", "Concept 2", "Concept 3", "Concept 4"],
-                category: "general",
-                codeSnippet: "",
-                interviewTip: "Understand the fundamentals thoroughly."
-            };
-        }
-
-        const svgContent = generateTopicSVG(imageMetadata);
-        imageUrl = `data:image/svg+xml;base64,${Buffer.from(svgContent).toString('base64')}`;
-    } catch (e) {
-        console.error("Image error:", e.message);
-        mediaFailed = true;
-    }
-
-    // Generate TTS script
-    try {
-        const completion = await groq.chat.completions.create({
-            model: "llama-3.3-70b-versatile",
+        }),
+        // Task 2: Generate TTS script
+        groq.chat.completions.create({
+            model: "llama-3.1-8b-instant",
             messages: [{
                 role: "user",
                 content: `Convert this markdown into a clean, natural TTS script (~${(duration || 3) * 150} words). Remove all formatting:\n\n${markdown.substring(0, 3000)}`
             }],
             max_tokens: 1500,
             temperature: 0.5,
-        });
-        audioText = completion.choices[0]?.message?.content?.trim() || null;
-    } catch (e) {
-        console.error("Audio error:", e.message);
+        })
+    ]);
+
+    // Process SVG result
+    if (imageResult.status === "fulfilled") {
+        try {
+            const raw = imageResult.value.choices[0]?.message?.content?.trim() || "{}";
+            const jsonMatch = raw.match(/\{[\s\S]*\}/);
+            const imageMetadata = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
+            const svgContent = generateTopicSVG(imageMetadata);
+            imageUrl = `data:image/svg+xml;base64,${Buffer.from(svgContent).toString('base64')}`;
+        } catch {
+            const fallbackMeta = { title: topic, subtitle: "CSE Placement Preparation", keyConcepts: ["Concept 1", "Concept 2", "Concept 3", "Concept 4"], category: "general", codeSnippet: "", interviewTip: "Understand the fundamentals thoroughly." };
+            const svgContent = generateTopicSVG(fallbackMeta);
+            imageUrl = `data:image/svg+xml;base64,${Buffer.from(svgContent).toString('base64')}`;
+        }
+    } else {
+        console.error("Image error:", imageResult.reason?.message);
+        mediaFailed = true;
+    }
+
+    // Process TTS result
+    if (audioResult.status === "fulfilled") {
+        audioText = audioResult.value.choices[0]?.message?.content?.trim() || null;
+    } else {
+        console.error("Audio error:", audioResult.reason?.message);
         mediaFailed = true;
     }
 
