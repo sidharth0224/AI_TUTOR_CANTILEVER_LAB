@@ -45,12 +45,12 @@ Return a JSON object with these fields (no markdown, ONLY raw JSON):
   "subtitle": "One-line description (max 15 words)",
   "keyConcepts": ["concept1", "concept2", "concept3", "concept4"],
   "category": "one of: dsa, web, system-design, database, os, networking, oop, general",
-  "codeSnippet": "A 2-4 line code example. IMPORTANT: You MUST use literal backslash-n (\\n) to separate lines. Each line must be under 50 chars. Example: 'class Node {\\n  constructor(val) {\\n    this.val = val;\\n    this.left = null;\\n  }\\n}'. Never put everything on one line.",
+  "codeSnippet": "A 5-8 line code example showing a practical implementation. IMPORTANT: You MUST use literal backslash-n (\\n) to separate lines. Each line must be under 50 chars. Example: 'class Node {\\n  constructor(val) {\\n    this.val = val;\\n    this.left = null;\\n    this.right = null;\\n  }\\n}\\n// Usage:\\nlet root = new Node(10);'. Always provide meaningful multi-line code.",
   "interviewTip": "One short placement interview tip (max 20 words)"
 }`
         }
       ],
-      max_tokens: 300,
+      max_tokens: 500,
       temperature: 0.5,
     });
 
@@ -198,7 +198,7 @@ function generateTopicSVG(meta) {
   const codeBlock = codeLine ? generateCodeBlock(codeLine, theme) : "";
   const tipSection = tip ? generateTipSection(tip) : "";
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="700" height="480" viewBox="0 0 700 480">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="700" height="560" viewBox="0 0 700 560">
   <defs>
     <linearGradient id="bgMain" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:${theme.gradient[0]}"/>
@@ -220,12 +220,12 @@ function generateTopicSVG(meta) {
     <filter id="softShadow">
       <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="rgba(0,0,0,0.3)"/>
     </filter>
-    <clipPath id="roundClip"><rect width="700" height="480" rx="20"/></clipPath>
+    <clipPath id="roundClip"><rect width="700" height="560" rx="20"/></clipPath>
   </defs>
 
   <!-- Background -->
   <g clip-path="url(#roundClip)">
-    <rect width="700" height="480" fill="url(#bgMain)"/>
+    <rect width="700" height="560" fill="url(#bgMain)"/>
 
     <!-- Ambient glow orbs -->
     <circle cx="100" cy="80" r="120" fill="${theme.accent}" opacity="0.06"/>
@@ -268,8 +268,8 @@ function generateTopicSVG(meta) {
     ${tipSection}
 
     <!-- Footer -->
-    <rect x="24" y="440" width="652" height="28" rx="8" fill="rgba(255,255,255,0.04)"/>
-    <text x="350" y="459" text-anchor="middle" font-family="'Segoe UI',Inter,system-ui,sans-serif" font-size="10" fill="rgba(255,255,255,0.3)" letter-spacing="1">
+    <rect x="24" y="520" width="652" height="28" rx="8" fill="rgba(255,255,255,0.04)"/>
+    <text x="350" y="539" text-anchor="middle" font-family="'Segoe UI',Inter,system-ui,sans-serif" font-size="10" fill="rgba(255,255,255,0.3)" letter-spacing="1">
       CANTILEVER AI TUTOR • POWERED BY LANGGRAPH + GROQ + LLAMA 3.3
     </text>
   </g>
@@ -279,7 +279,7 @@ function generateTopicSVG(meta) {
 function generateDotGrid() {
   let dots = "";
   for (let x = 40; x < 700; x += 40) {
-    for (let y = 40; y < 480; y += 40) {
+    for (let y = 40; y < 560; y += 40) {
       dots += `<circle cx="${x}" cy="${y}" r="0.8" fill="rgba(255,255,255,0.06)"/>`;
     }
   }
@@ -484,7 +484,7 @@ function generateCodeBlock(codeLine, theme) {
     }
   }
 
-  codeLines = codeLines.slice(0, 6);
+  codeLines = codeLines.slice(0, 10);
 
   return `
     <!-- Code snippet block -->
@@ -512,12 +512,12 @@ function generateTipSection(tip) {
   return `
     <!-- Interview Tip -->
     <g filter="url(#softShadow)">
-      <rect x="36" y="380" width="628" height="48" rx="10" fill="rgba(251,191,36,0.06)" stroke="rgba(251,191,36,0.2)" stroke-width="1"/>
+      <rect x="36" y="460" width="628" height="48" rx="10" fill="rgba(251,191,36,0.06)" stroke="rgba(251,191,36,0.2)" stroke-width="1"/>
     </g>
-    <text x="56" y="400" font-family="'Segoe UI',Inter,system-ui,sans-serif" font-size="11" fill="#fbbf24" font-weight="700">
+    <text x="56" y="480" font-family="'Segoe UI',Inter,system-ui,sans-serif" font-size="11" fill="#fbbf24" font-weight="700">
       💡 INTERVIEW TIP
     </text>
-    <text x="56" y="418" font-family="'Segoe UI',Inter,system-ui,sans-serif" font-size="11" fill="rgba(255,255,255,0.65)">
+    <text x="56" y="498" font-family="'Segoe UI',Inter,system-ui,sans-serif" font-size="11" fill="rgba(255,255,255,0.65)">
       ${tip}
     </text>`;
 }
