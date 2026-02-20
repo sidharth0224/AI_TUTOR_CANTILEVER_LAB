@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="44" viewBox="0 0 180 44">
+  <!-- Cantilever Logo -->
+  <rect x="0" y="6" width="28" height="28" rx="4" fill="#1a1a2e"/>
+  <rect x="4" y="10" width="20" height="3" rx="1" fill="#7c5dfa"/>
+  <rect x="4" y="16" width="14" height="3" rx="1" fill="#a78bfa"/>
+  <rect x="4" y="22" width="20" height="3" rx="1" fill="#7c5dfa"/>
+  <rect x="4" y="28" width="8" height="3" rx="1" fill="#a78bfa"/>
+  
+  <!-- CANTILEVER text -->
+  <text x="34" y="26" font-family="Inter,system-ui,sans-serif" font-size="17" font-weight="800" fill="white" letter-spacing="0.5">
+    <tspan fill="#e0e0e0">CANT</tspan><tspan fill="#7c5dfa">i</tspan><tspan fill="#e0e0e0">LEVER</tspan>
+  </text>
+  
+  <!-- Tagline -->
+  <text x="34" y="38" font-family="Inter,system-ui,sans-serif" font-size="8" fill="#888" letter-spacing="0.8" font-style="italic">
+    bridging colleges to corporates
+  </text>
+</svg>
