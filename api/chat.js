@@ -1,6 +1,6 @@
 // Vercel Serverless Function: POST /api/chat
-// Runs the 3-agent pipeline directly (no LangGraph dependency for serverless compatibility)
-// Pipeline: Supervisor → Researcher → Media Engine
+// Streams JSON lines to keep connection alive and avoid Vercel Hobby 10s proxy timeout.
+// Pipeline: Supervisor → Researcher → Media Engine (streamed per stage)
 
 import { ChatGroq } from "@langchain/groq";
 import Groq from "groq-sdk";
@@ -107,9 +107,8 @@ async function runMediaEngine(topic, markdown, duration) {
     let audioText = null;
     let mediaFailed = false;
 
-    // Run SVG metadata and TTS script generation in PARALLEL to save time
+    // Run SVG metadata and TTS script generation in PARALLEL
     const [imageResult, audioResult] = await Promise.allSettled([
-        // Task 1: Generate SVG metadata
         groq.chat.completions.create({
             model: "llama-3.1-8b-instant",
             messages: [{
@@ -127,14 +126,13 @@ Return ONLY a raw JSON object (no markdown):
   "subtitle": "One-line description of ${topic} (max 15 words)",
   "keyConcepts": ["sub-concept of ${topic}", "sub-concept of ${topic}", "sub-concept of ${topic}", "sub-concept of ${topic}"],
   "category": "one of: dsa, web, system-design, database, os, networking, oop, ml, general",
-  "codeSnippet": "A 5-8 line code example demonstrating ${topic}. Use literal backslash-n (\\n) to separate lines. Each line under 50 chars.",
+  "codeSnippet": "A 5-8 line code example demonstrating ${topic}. Use literal backslash-n (\\\\n) to separate lines. Each line under 50 chars.",
   "interviewTip": "One interview tip specifically about ${topic} (max 20 words)"
 }`
             }],
             max_tokens: 500,
             temperature: 0.3,
         }),
-        // Task 2: Generate TTS script
         groq.chat.completions.create({
             model: "llama-3.1-8b-instant",
             messages: [{
@@ -322,7 +320,12 @@ function escapeXml(str) {
     return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
 }
 
-// ─── Main Handler ───
+// ─── Helper: write a JSON line to the stream ───
+function writeLine(res, data) {
+    res.write(JSON.stringify(data) + "\n");
+}
+
+// ─── Main Handler — Streaming ───
 export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -341,45 +344,65 @@ export default async function handler(req, res) {
             });
         }
 
+        // ─── Begin streaming response ───
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        res.setHeader('Transfer-Encoding', 'chunked');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        res.status(200);
+
         // Step 1: Supervisor (guardrail)
         const supervisorResult = await runSupervisor(query.trim());
+        writeLine(res, { step: "supervisor", data: { rejected: supervisorResult.rejected, classification: supervisorResult.classification } });
 
         if (supervisorResult.rejected) {
-            return res.status(200).json({
-                query: query.trim(),
-                topic: null,
-                duration,
-                rejected: true,
-                rejectionReason: supervisorResult.rejectionReason,
-                classification: supervisorResult.classification,
-                markdown: null,
-                imageUrl: null,
-                audioText: null,
-                mediaFailed: false,
+            writeLine(res, {
+                step: "done",
+                data: {
+                    query: query.trim(), topic: null, duration,
+                    rejected: true,
+                    rejectionReason: supervisorResult.rejectionReason,
+                    classification: supervisorResult.classification,
+                    markdown: null, imageUrl: null, audioText: null, mediaFailed: false,
+                }
             });
+            return res.end();
         }
 
         // Step 2: Researcher (content generation)
         const markdown = await runResearcher(supervisorResult.topic, duration);
+        writeLine(res, { step: "researcher", data: { markdown } });
 
-        // Step 3: Media Engine (image + audio)
+        // Step 3: Media Engine (image + audio — parallel)
         const media = await runMediaEngine(supervisorResult.topic, markdown, duration);
+        writeLine(res, { step: "media", data: { imageUrl: media.imageUrl, audioText: media.audioText, mediaFailed: media.mediaFailed } });
 
-        return res.status(200).json({
-            query: query.trim(),
-            topic: supervisorResult.topic,
-            duration,
-            rejected: false,
-            rejectionReason: null,
-            classification: supervisorResult.classification,
-            markdown,
-            imageUrl: media.imageUrl,
-            audioText: media.audioText,
-            mediaFailed: media.mediaFailed,
+        // Final: complete result
+        writeLine(res, {
+            step: "done",
+            data: {
+                query: query.trim(),
+                topic: supervisorResult.topic,
+                duration,
+                rejected: false,
+                rejectionReason: null,
+                classification: supervisorResult.classification,
+                markdown,
+                imageUrl: media.imageUrl,
+                audioText: media.audioText,
+                mediaFailed: media.mediaFailed,
+            }
         });
+
+        return res.end();
 
     } catch (error) {
         console.error('Chat API error:', error);
+        // If headers already sent (streaming started), write error as a line
+        if (res.headersSent) {
+            writeLine(res, { step: "error", data: { error: `AI processing failed: ${error.message}` } });
+            return res.end();
+        }
         return res.status(500).json({
             error: `AI processing failed: ${error.message}`,
         });

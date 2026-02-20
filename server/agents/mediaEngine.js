@@ -30,10 +30,11 @@ export async function runMediaEngine(state) {
   let audioText = null;
   let mediaFailed = false;
 
-  // ─── Image Generation: Create a topic SVG ───
-  try {
-    const completion = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
+  // ─── Run Image + Audio generation in PARALLEL ───
+  const [imageResult, audioResult] = await Promise.allSettled([
+    // Task 1: Image metadata
+    groq.chat.completions.create({
+      model: "llama-3.1-8b-instant",
       messages: [
         {
           role: "user",
@@ -50,55 +51,17 @@ Return ONLY a raw JSON object (no markdown):
   "subtitle": "One-line description of ${state.topic} (max 15 words)",
   "keyConcepts": ["sub-concept of ${state.topic}", "sub-concept of ${state.topic}", "sub-concept of ${state.topic}", "sub-concept of ${state.topic}"],
   "category": "one of: dsa, web, system-design, database, os, networking, oop, ml, general",
-  "codeSnippet": "A 5-8 line code example demonstrating ${state.topic}. Use literal backslash-n (\\n) to separate lines. Each line under 50 chars.",
+  "codeSnippet": "A 5-8 line code example demonstrating ${state.topic}. Use literal backslash-n (\\\\n) to separate lines. Each line under 50 chars.",
   "interviewTip": "One interview tip specifically about ${state.topic} (max 20 words)"
 }`
         }
       ],
       max_tokens: 500,
       temperature: 0.3,
-    });
-
-    let imageMetadata;
-    try {
-      const raw = completion.choices[0]?.message?.content?.trim() || "{}";
-      // Extract JSON from possible markdown code block
-      const jsonMatch = raw.match(/\{[\s\S]*\}/);
-      imageMetadata = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
-    } catch {
-      imageMetadata = {
-        title: state.topic,
-        subtitle: "CSE Placement Preparation",
-        keyConcepts: ["Concept 1", "Concept 2", "Concept 3", "Concept 4"],
-        category: "general",
-        codeSnippet: "",
-        interviewTip: "Understand the fundamentals thoroughly."
-      };
-    }
-
-    // Generate rich topic SVG with the structured metadata
-    const svgContent = generateTopicSVG(imageMetadata);
-
-    if (process.env.VERCEL) {
-      // Serverless: return SVG as data URL (no filesystem writes)
-      imageUrl = `data:image/svg+xml;base64,${Buffer.from(svgContent).toString('base64')}`;
-    } else {
-      // Local dev: write to public folder
-      const imageFileName = `topic-${Date.now()}.svg`;
-      const imagePath = path.join(publicDir, imageFileName);
-      fs.writeFileSync(imagePath, svgContent);
-      imageUrl = `/public/${imageFileName}`;
-    }
-
-  } catch (error) {
-    console.error("Image generation error:", error.message);
-    mediaFailed = true;
-  }
-
-  // ─── Audio: Prepare text for browser-side TTS ───
-  try {
-    const completion = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
+    }),
+    // Task 2: TTS script
+    groq.chat.completions.create({
+      model: "llama-3.1-8b-instant",
       messages: [
         {
           role: "user",
@@ -112,12 +75,47 @@ ${state.markdown.substring(0, 3000)}`
       ],
       max_tokens: 1500,
       temperature: 0.5,
-    });
+    })
+  ]);
 
-    audioText = completion.choices[0]?.message?.content?.trim() || null;
+  // Process image result
+  if (imageResult.status === "fulfilled") {
+    try {
+      const raw = imageResult.value.choices[0]?.message?.content?.trim() || "{}";
+      const jsonMatch = raw.match(/\{[\s\S]*\}/);
+      const imageMetadata = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
+      const svgContent = generateTopicSVG(imageMetadata);
 
-  } catch (error) {
-    console.error("Audio script generation error:", error.message);
+      if (process.env.VERCEL) {
+        imageUrl = `data:image/svg+xml;base64,${Buffer.from(svgContent).toString('base64')}`;
+      } else {
+        const imageFileName = `topic-${Date.now()}.svg`;
+        const imagePath = path.join(publicDir, imageFileName);
+        fs.writeFileSync(imagePath, svgContent);
+        imageUrl = `/public/${imageFileName}`;
+      }
+    } catch {
+      const fallbackMeta = { title: state.topic, subtitle: "CSE Placement Preparation", keyConcepts: ["Concept 1", "Concept 2", "Concept 3", "Concept 4"], category: "general", codeSnippet: "", interviewTip: "Understand the fundamentals thoroughly." };
+      const svgContent = generateTopicSVG(fallbackMeta);
+      if (process.env.VERCEL) {
+        imageUrl = `data:image/svg+xml;base64,${Buffer.from(svgContent).toString('base64')}`;
+      } else {
+        const imageFileName = `topic-${Date.now()}.svg`;
+        const imagePath = path.join(publicDir, imageFileName);
+        fs.writeFileSync(imagePath, svgContent);
+        imageUrl = `/public/${imageFileName}`;
+      }
+    }
+  } else {
+    console.error("Image generation error:", imageResult.reason?.message);
+    mediaFailed = true;
+  }
+
+  // Process audio result
+  if (audioResult.status === "fulfilled") {
+    audioText = audioResult.value.choices[0]?.message?.content?.trim() || null;
+  } else {
+    console.error("Audio script generation error:", audioResult.reason?.message);
     mediaFailed = true;
   }
 

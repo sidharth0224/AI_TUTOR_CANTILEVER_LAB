@@ -61,14 +61,7 @@ export default function App() {
         if (area) area.scrollTop = area.scrollHeight;
     }, [messages, loading]);
 
-    // Simulate agent step progression while loading
-    useEffect(() => {
-        if (!loading) return;
-        setLoadingStep('guardrail');
-        const t1 = setTimeout(() => setLoadingStep('teacher'), 3000);
-        const t2 = setTimeout(() => setLoadingStep('media'), 15000);
-        return () => { clearTimeout(t1); clearTimeout(t2); };
-    }, [loading]);
+    // loadingStep is now set by the streaming onProgress callback (no more fake timers)
 
     const handleSend = async (query) => {
         const userMsg = {
@@ -78,9 +71,15 @@ export default function App() {
         };
         setMessages(prev => [...prev, userMsg]);
         setLoading(true);
+        setLoadingStep('guardrail');
 
         try {
-            const result = await sendMessage(query, duration);
+            const result = await sendMessage(query, duration, (step) => {
+                // Update loading step based on real server streaming progress
+                if (step === 'supervisor') setLoadingStep('teacher');
+                else if (step === 'researcher') setLoadingStep('media');
+                else if (step === 'media') setLoadingStep('done');
+            });
             const assistantMsg = {
                 role: 'assistant',
                 rejected: result.rejected,
