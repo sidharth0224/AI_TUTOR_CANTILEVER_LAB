@@ -1,0 +1,13 @@
+{
+    "name": "cantilever-ai-tutor",
+    "version": "1.0.0",
+    "private": true,
+    "type": "module",
+    "dependencies": {
+        "@langchain/core": "^0.3.0",
+        "@langchain/groq": "^0.1.0",
+        "@langchain/langgraph": "^0.2.0",
+        "groq-sdk": "^0.8.0",
+        "uuid": "^10.0.0"
+    }
+}

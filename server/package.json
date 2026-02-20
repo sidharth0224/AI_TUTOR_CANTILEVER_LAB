@@ -1,0 +1,21 @@
+{
+    "name": "ai-tutor-server",
+    "version": "1.0.0",
+    "description": "AI Tutor backend with LangGraph agent orchestration",
+    "main": "index.js",
+    "type": "module",
+    "scripts": {
+        "start": "node index.js",
+        "dev": "node --watch index.js"
+    },
+    "dependencies": {
+        "@langchain/core": "^0.3.0",
+        "@langchain/groq": "^0.1.0",
+        "@langchain/langgraph": "^0.2.0",
+        "groq-sdk": "^0.8.0",
+        "cors": "^2.8.5",
+        "dotenv": "^16.4.5",
+        "express": "^4.21.0",
+        "uuid": "^10.0.0"
+    }
+}
