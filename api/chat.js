@@ -64,10 +64,10 @@ Respond with ONLY a JSON object (no markdown, no code fences):
 // ─── Researcher Agent ───
 async function runResearcher(topic, duration) {
     const DURATION_MAP = {
-        2: { words: 300, label: "concise" },
-        3: { words: 450, label: "moderate" },
-        4: { words: 600, label: "detailed" },
-        5: { words: 750, label: "comprehensive" },
+        2: { words: 300, label: "concise", maxTok: 1024 },
+        3: { words: 450, label: "moderate", maxTok: 1500 },
+        4: { words: 600, label: "detailed", maxTok: 2048 },
+        5: { words: 750, label: "comprehensive", maxTok: 2500 },
     };
 
     const config = DURATION_MAP[duration] || DURATION_MAP[3];
@@ -75,9 +75,9 @@ async function runResearcher(topic, duration) {
 
     const model = new ChatGroq({
         apiKey: process.env.GROQ_API_KEY,
-        model: "llama-3.3-70b-versatile",
+        model: "llama-3.1-8b-instant",
         temperature: 0.7,
-        maxTokens: 4096,
+        maxTokens: config.maxTok,
     });
 
     const systemPrompt = `You are an expert AI Tutor for placement preparation. Generate a ${config.label}, well-structured Markdown explanation.
