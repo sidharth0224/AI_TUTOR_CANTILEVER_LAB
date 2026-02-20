@@ -37,21 +37,26 @@ export async function runMediaEngine(state) {
       messages: [
         {
           role: "user",
-          content: `You are generating metadata for a CSE placement preparation infographic about: "${state.topic}".
+          content: `Generate metadata for an infographic about EXACTLY this topic: "${state.topic}".
 
-Return a JSON object with these fields (no markdown, ONLY raw JSON):
+CRITICAL RULES:
+- The title MUST be about "${state.topic}" specifically, NOT a generic parent category.
+- keyConcepts must be 4 sub-concepts WITHIN "${state.topic}", not sibling topics.
+- codeSnippet MUST demonstrate "${state.topic}" specifically.
+
+Return ONLY a raw JSON object (no markdown):
 {
-  "title": "Short title (max 5 words)",
-  "subtitle": "One-line description (max 15 words)",
-  "keyConcepts": ["concept1", "concept2", "concept3", "concept4"],
+  "title": "Exact topic name (must match: ${state.topic})",
+  "subtitle": "One-line description of ${state.topic} (max 15 words)",
+  "keyConcepts": ["sub-concept of ${state.topic}", "sub-concept of ${state.topic}", "sub-concept of ${state.topic}", "sub-concept of ${state.topic}"],
   "category": "one of: dsa, web, system-design, database, os, networking, oop, general",
-  "codeSnippet": "A 5-8 line code example showing a practical implementation. IMPORTANT: You MUST use literal backslash-n (\\n) to separate lines. Each line must be under 50 chars. Example: 'class Node {\\n  constructor(val) {\\n    this.val = val;\\n    this.left = null;\\n    this.right = null;\\n  }\\n}\\n// Usage:\\nlet root = new Node(10);'. Always provide meaningful multi-line code.",
-  "interviewTip": "One short placement interview tip (max 20 words)"
+  "codeSnippet": "A 5-8 line code example demonstrating ${state.topic}. Use literal backslash-n (\\n) to separate lines. Each line under 50 chars.",
+  "interviewTip": "One interview tip specifically about ${state.topic} (max 20 words)"
 }`
         }
       ],
       max_tokens: 500,
-      temperature: 0.5,
+      temperature: 0.3,
     });
 
     let imageMetadata;

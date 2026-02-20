@@ -113,20 +113,26 @@ async function runMediaEngine(topic, markdown, duration) {
             model: "llama-3.3-70b-versatile",
             messages: [{
                 role: "user",
-                content: `You are generating metadata for a CSE placement preparation infographic about: "${topic}".
+                content: `Generate metadata for an infographic about EXACTLY this topic: "${topic}".
 
-Return a JSON object with these fields (no markdown, ONLY raw JSON):
+CRITICAL RULES:
+- The title MUST be about "${topic}" specifically, NOT a generic parent category.
+- keyConcepts must be 4 sub-concepts WITHIN "${topic}", not sibling topics.
+- codeSnippet MUST demonstrate "${topic}" specifically (e.g., if topic is "Arrays", show array code, NOT linked list code).
+- For example: if topic is "Arrays", title should be "Arrays" not "Data Structures". If topic is "Binary Search Trees", title should be "Binary Search Trees" not "Trees".
+
+Return ONLY a raw JSON object (no markdown):
 {
-  "title": "Short title (max 5 words)",
-  "subtitle": "One-line description (max 15 words)",
-  "keyConcepts": ["concept1", "concept2", "concept3", "concept4"],
+  "title": "Exact topic name (must match: ${topic})",
+  "subtitle": "One-line description of ${topic} (max 15 words)",
+  "keyConcepts": ["sub-concept of ${topic}", "sub-concept of ${topic}", "sub-concept of ${topic}", "sub-concept of ${topic}"],
   "category": "one of: dsa, web, system-design, database, os, networking, oop, general",
-  "codeSnippet": "A 5-8 line code example showing a practical implementation. IMPORTANT: You MUST use literal backslash-n (\\n) to separate lines. Each line must be under 50 chars. Example: 'class Node {\\n  constructor(val) {\\n    this.val = val;\\n    this.left = null;\\n    this.right = null;\\n  }\\n}\\n// Usage:\\nlet root = new Node(10);'. Always provide meaningful multi-line code.",
-  "interviewTip": "One short placement interview tip (max 20 words)"
+  "codeSnippet": "A 5-8 line code example demonstrating ${topic} specifically. MUST use literal backslash-n (\\n) to separate lines. Each line under 50 chars. Example for Arrays: 'let arr = [10, 20, 30];\\narr.push(40);\\nconsole.log(arr[0]);\\n// Output: 10\\narr.pop();\\nconsole.log(arr.length);\\n// Output: 3'. Never put everything on one line.",
+  "interviewTip": "One interview tip specifically about ${topic} (max 20 words)"
 }`
             }],
             max_tokens: 500,
-            temperature: 0.5,
+            temperature: 0.3,
         });
 
         let imageMetadata;
