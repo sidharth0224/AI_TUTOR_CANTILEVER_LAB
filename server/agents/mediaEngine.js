@@ -49,7 +49,7 @@ Return ONLY a raw JSON object (no markdown):
   "title": "Exact topic name (must match: ${state.topic})",
   "subtitle": "One-line description of ${state.topic} (max 15 words)",
   "keyConcepts": ["sub-concept of ${state.topic}", "sub-concept of ${state.topic}", "sub-concept of ${state.topic}", "sub-concept of ${state.topic}"],
-  "category": "one of: dsa, web, system-design, database, os, networking, oop, general",
+  "category": "one of: dsa, web, system-design, database, os, networking, oop, ml, general",
   "codeSnippet": "A 5-8 line code example demonstrating ${state.topic}. Use literal backslash-n (\\n) to separate lines. Each line under 50 chars.",
   "interviewTip": "One interview tip specifically about ${state.topic} (max 20 words)"
 }`
@@ -179,6 +179,13 @@ const CATEGORY_THEMES = {
     accentAlt: "#e879f9",
     icon: "🔷",
     visualType: "class"
+  },
+  ml: {
+    gradient: ["#0c1a1a", "#0d3b3b", "#1a4d4d"],
+    accent: "#14b8a6",
+    accentAlt: "#2dd4bf",
+    icon: "🧠",
+    visualType: "neuralnet"
   },
   general: {
     gradient: ["#0c0c1d", "#1a1040", "#1e1050"],
@@ -409,6 +416,33 @@ function generateVisualElements(theme) {
         <text x="75" y="95" text-anchor="middle" font-size="9" fill="${theme.accentAlt}">Dog</text>
         <rect x="10" y="102" width="130" height="22" rx="0 0 4 4" stroke="${theme.accentAlt}" stroke-width="1" fill="none"/>
         <text x="18" y="117" font-size="8" fill="rgba(255,255,255,0.4)">+ speak(): "Woof"</text>
+      </g>`;
+    case "neuralnet":
+      return `
+      <!-- Neural network visual -->
+      <g opacity="0.15" transform="translate(480, 135)">
+        <circle cx="20" cy="20" r="10" stroke="${theme.accent}" stroke-width="1.5" fill="none"/>
+        <circle cx="20" cy="55" r="10" stroke="${theme.accent}" stroke-width="1.5" fill="none"/>
+        <circle cx="20" cy="90" r="10" stroke="${theme.accent}" stroke-width="1.5" fill="none"/>
+        <circle cx="80" cy="12" r="10" stroke="${theme.accentAlt}" stroke-width="1.5" fill="none"/>
+        <circle cx="80" cy="42" r="10" stroke="${theme.accentAlt}" stroke-width="1.5" fill="none"/>
+        <circle cx="80" cy="72" r="10" stroke="${theme.accentAlt}" stroke-width="1.5" fill="none"/>
+        <circle cx="80" cy="102" r="10" stroke="${theme.accentAlt}" stroke-width="1.5" fill="none"/>
+        <circle cx="140" cy="35" r="10" stroke="#10b981" stroke-width="1.5" fill="none"/>
+        <circle cx="140" cy="75" r="10" stroke="#10b981" stroke-width="1.5" fill="none"/>
+        <line x1="30" y1="20" x2="70" y2="12" stroke="${theme.accent}" stroke-width="0.6" opacity="0.5"/>
+        <line x1="30" y1="20" x2="70" y2="42" stroke="${theme.accent}" stroke-width="0.6" opacity="0.5"/>
+        <line x1="30" y1="55" x2="70" y2="42" stroke="${theme.accent}" stroke-width="0.6" opacity="0.5"/>
+        <line x1="30" y1="55" x2="70" y2="72" stroke="${theme.accent}" stroke-width="0.6" opacity="0.5"/>
+        <line x1="30" y1="90" x2="70" y2="72" stroke="${theme.accent}" stroke-width="0.6" opacity="0.5"/>
+        <line x1="30" y1="90" x2="70" y2="102" stroke="${theme.accent}" stroke-width="0.6" opacity="0.5"/>
+        <line x1="90" y1="12" x2="130" y2="35" stroke="${theme.accentAlt}" stroke-width="0.6" opacity="0.5"/>
+        <line x1="90" y1="42" x2="130" y2="35" stroke="${theme.accentAlt}" stroke-width="0.6" opacity="0.5"/>
+        <line x1="90" y1="72" x2="130" y2="75" stroke="${theme.accentAlt}" stroke-width="0.6" opacity="0.5"/>
+        <line x1="90" y1="102" x2="130" y2="75" stroke="${theme.accentAlt}" stroke-width="0.6" opacity="0.5"/>
+        <text x="20" y="118" text-anchor="middle" font-size="7" fill="${theme.accent}">Input</text>
+        <text x="80" y="118" text-anchor="middle" font-size="7" fill="${theme.accentAlt}">Hidden</text>
+        <text x="140" y="98" text-anchor="middle" font-size="7" fill="#10b981">Output</text>
       </g>`;
     default:
       return `

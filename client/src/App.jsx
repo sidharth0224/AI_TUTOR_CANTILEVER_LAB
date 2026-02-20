@@ -14,6 +14,7 @@ const FALLBACK_TOPICS = [
     { id: 'dbms', name: 'Database Management Systems', description: 'DBMS concepts', subtopics: ['Normalization', 'SQL Joins', 'Indexing', 'Transactions', 'ACID', 'NoSQL'] },
     { id: 'os', name: 'Operating Systems', description: 'OS fundamentals', subtopics: ['Processes', 'Threads', 'Deadlocks', 'Memory Management', 'Scheduling', 'File Systems'] },
     { id: 'cn', name: 'Computer Networks', description: 'Networking concepts', subtopics: ['OSI Model', 'TCP/IP', 'HTTP/HTTPS', 'DNS', 'Subnetting', 'Routing'] },
+    { id: 'ml', name: 'Machine Learning & AI', description: 'ML algorithms and AI concepts', subtopics: ['Decision Trees', 'Random Forest', 'Linear Regression', 'Neural Networks', 'SVM', 'K-Means', 'KNN', 'NLP'] },
 ];
 
 export default function App() {

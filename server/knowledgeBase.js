@@ -103,6 +103,20 @@ const knowledgeBase = {
         "TCP vs UDP",
         "Network Security Basics"
       ]
+    },
+    "ml": {
+      name: "Machine Learning & AI",
+      description: "Machine learning algorithms, AI concepts, and data science for placements",
+      subtopics: [
+        "Decision Trees & Random Forest",
+        "Linear & Logistic Regression",
+        "Support Vector Machines (SVM)",
+        "Neural Networks & Deep Learning",
+        "K-Means Clustering",
+        "K-Nearest Neighbors (KNN)",
+        "Natural Language Processing (NLP)",
+        "Model Evaluation & Metrics"
+      ]
     }
   },
 

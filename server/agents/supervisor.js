@@ -61,7 +61,7 @@ export async function runSupervisor(state) {
         return {
             ...state,
             rejected: false,
-            topic: result.detectedTopic || state.query,
+            topic: state.query,
             classification: result.classification
         };
     } catch (error) {
